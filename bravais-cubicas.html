@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Celdas de Bravais Cúbicas</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;800&display=swap');
+
+  :root {
+    --bg: #080c14;
+    --surface: #0d1420;
+    --surface2: #131d2e;
+    --border: #1e2f47;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --accent3: #7fff6e;
+    --text: #c8dff0;
+    --text-dim: #4a6a8a;
+    --atom-glow: rgba(0, 212, 255, 0.4);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+
+  header {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    margin-bottom: 32px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  header h1 {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #fff;
+  }
+
+  header h1 span { color: var(--accent); }
+
+  header p {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  .main-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr 280px;
+    gap: 20px;
+    align-items: start;
+  }
+
+  /* PANEL */
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-title {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+  }
+
+  /* CELL TYPE SELECTOR */
+  .cell-types {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .cell-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cell-btn::after {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    transform: scaleY(0);
+    transition: transform 0.2s;
+    border-radius: 3px 0 0 3px;
+  }
+
+  .cell-btn:hover, .cell-btn.active {
+    border-color: var(--accent);
+    background: rgba(0, 212, 255, 0.06);
+  }
+
+  .cell-btn:hover::after, .cell-btn.active::after { transform: scaleY(1); }
+
+  .cell-btn .name {
+    font-weight: 600;
+    font-size: 15px;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .cell-btn .abbr {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+  }
+
+  .cell-btn .desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+
+  .cell-btn .atoms-count {
+    position: absolute;
+    right: 12px; top: 12px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    border-radius: 20px;
+    padding: 2px 8px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent);
+  }
+
+  /* CANVAS AREA */
+  .canvas-wrapper {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .canvas-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .canvas-title {
+    font-weight: 800;
+    font-size: 18px;
+    color: #fff;
+  }
+
+  .canvas-title span { color: var(--accent); }
+
+  .controls-bar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .ctrl-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 6px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  canvas {
+    display: block;
+    width: 100%;
+    background: radial-gradient(ellipse at center, #0a1628 0%, #050810 100%);
+    cursor: grab;
+  }
+
+  canvas:active { cursor: grabbing; }
+
+  .canvas-footer {
+    padding: 10px 16px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    gap: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text-dim);
+  }
+
+  .canvas-footer span { color: var(--accent); }
+
+  /* ELEMENT SELECTOR */
+  .element-grid {
+    padding: 12px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .elem-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 4px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .elem-btn:hover, .elem-btn.active {
+    border-color: var(--accent2);
+    background: rgba(255, 107, 53, 0.08);
+  }
+
+  .elem-btn .symbol {
+    font-weight: 800;
+    font-size: 16px;
+    color: #fff;
+    line-height: 1;
+  }
+
+  .elem-btn .elem-name {
+    font-size: 9px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .elem-btn .z {
+    font-family: 'Space Mono', monospace;
+    font-size: 8px;
+    color: var(--accent2);
+    position: absolute;
+    top: 4px;
+    right: 5px;
+  }
+
+  /* INFO PANEL */
+  .info-section { padding: 16px; }
+
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(30, 47, 71, 0.5);
+    font-size: 13px;
+  }
+
+  .info-row:last-child { border-bottom: none; }
+
+  .info-label {
+    color: var(--text-dim);
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .info-value {
+    font-weight: 600;
+    color: var(--accent3);
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+  }
+
+  /* SLIDERS */
+  .slider-section { padding: 12px 16px 16px; }
+
+  .slider-row {
+    margin-bottom: 16px;
+  }
+
+  .slider-label {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+    font-size: 11px;
+  }
+
+  .slider-label span:first-child {
+    font-family: 'Space Mono', monospace;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .slider-label span:last-child {
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+  }
+
+  input[type=range] {
+    width: 100%;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+    cursor: pointer;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent);
+    cursor: pointer;
+  }
+
+  /* LEGEND */
+  .legend { padding: 12px 16px; }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+  }
+
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.2);
+    color: var(--accent);
+    margin-left: 4px;
+  }
+
+  /* ===== DENSITY PANEL ===== */
+  .density-section { padding: 14px 16px; }
+
+  .density-formula {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .density-formula .formula-text {
+    font-family: 'Space Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    letter-spacing: 1px;
+  }
+
+  .density-formula .formula-sub {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 4px;
+    font-family: 'Space Mono', monospace;
+  }
+
+  .density-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(30,47,71,0.5);
+    font-size: 12px;
+  }
+
+  .density-step:last-child { border-bottom: none; }
+
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(0,212,255,0.1);
+    border: 1px solid rgba(0,212,255,0.3);
+    color: var(--accent);
+    font-family: 'Space Mono', monospace;
+    font-size: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .step-content { flex: 1; }
+
+  .step-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+  }
+
+  .step-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--text);
+  }
+
+  .step-value.highlight {
+    color: var(--accent3);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .step-eq {
+    font-size: 10px;
+    color: var(--text-dim);
+    margin-top: 2px;
+    font-family: 'Space Mono', monospace;
+    line-height: 1.5;
+  }
+
+  .density-result {
+    margin-top: 12px;
+    background: linear-gradient(135deg, rgba(127,255,110,0.07), rgba(0,212,255,0.04));
+    border: 1px solid rgba(127,255,110,0.25);
+    border-radius: 8px;
+    padding: 12px 14px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .density-result .res-label {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .density-result .res-value {
+    font-family: 'Space Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent3);
+    text-shadow: 0 0 12px rgba(127,255,110,0.4);
+  }
+
+  /* ===== XRD PANEL ===== */
+  .xrd-section { padding: 14px 16px; }
+
+  .xrd-rule-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,107,53,0.1);
+    border: 1px solid rgba(255,107,53,0.3);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--accent2);
+    margin-bottom: 12px;
+  }
+
+  .xrd-rule-badge::before {
+    content: '';
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 6px var(--accent2);
+  }
+
+  .xrd-rule-desc {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-bottom: 14px;
+    padding: 8px 10px;
+    background: var(--surface2);
+    border-radius: 6px;
+    border-left: 2px solid var(--accent2);
+    font-family: 'Space Mono', monospace;
+  }
+
+  .xrd-planes-label {
+    font-size: 10px;
+    color: var(--text-dim);
+    font-family: 'Space Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 8px;
+  }
+
+  .xrd-planes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 12px;
+  }
+
+  .plane-badge {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    transition: all 0.2s;
+  }
+
+  .plane-badge.allowed {
+    background: rgba(0,212,255,0.12);
+    border: 1px solid rgba(0,212,255,0.4);
+    color: var(--accent);
+    box-shadow: 0 0 8px rgba(0,212,255,0.15);
+  }
+
+  .plane-badge.forbidden {
+    background: rgba(30,47,71,0.3);
+    border: 1px solid rgba(30,47,71,0.6);
+    color: var(--text-dim);
+    text-decoration: line-through;
+    opacity: 0.45;
+  }
+
+  .xrd-summary {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+  }
+
+  .xrd-summary .s-label { color: var(--text-dim); }
+  .xrd-summary .s-val-green { color: var(--accent3); }
+  .xrd-summary .s-val-red { color: #ff4d4d; }
+
+  @media (max-width: 1100px) {
+    .main-layout { grid-template-columns: 1fr 1fr; }
+    .canvas-wrapper { grid-column: 1 / -1; order: -1; }
+  }
+
+  @media (max-width: 700px) {
+    .main-layout { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <div>
+      <h1>Celdas de <span>Bravais</span> Cúbicas</h1>
+      <p>Simulador cristalográfico interactivo &nbsp;·&nbsp; Arrastra para rotar</p>
+    </div>
+  </header>
+
+  <div class="main-layout">
+    <!-- LEFT: Cell type + element -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="panel">
+        <div class="panel-title">Tipo de Celda</div>
+        <div class="cell-types">
+          <button class="cell-btn active" data-cell="sc" onclick="selectCell('sc',this)">
+            <div class="atoms-count">1 átomo</div>
+            <div class="name">Cúbica Simple</div>
+            <div class="abbr">SC — Simple Cubic</div>
+            <div class="desc">Átomos solo en vértices. Factor de empaquetamiento 52.4%</div>
+          </button>
+          <button class="cell-btn" data-cell="bcc" onclick="selectCell('bcc',this)">
+            <div class="atoms-count">2 átomos</div>
+            <div class="name">Cúbica Centrada</div>
+            <div class="abbr">BCC — Body-Centered</div>
+            <div class="desc">Vértices + átomo central. Empaquetamiento 68%</div>
+          </button>
+          <button class="cell-btn" data-cell="fcc" onclick="selectCell('fcc',this)">
+            <div class="atoms-count">4 átomos</div>
+            <div class="name">Cúbica Centrada en Caras</div>
+            <div class="abbr">FCC — Face-Centered</div>
+            <div class="desc">Vértices + caras. Empaquetamiento 74%</div>
+          </button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Elemento</div>
+        <div class="element-grid" id="elemGrid"></div>
+      </div>
+    </div>
+
+    <!-- CENTER: 3D Canvas -->
+    <div class="canvas-wrapper">
+      <div class="canvas-header">
+        <div class="canvas-title" id="cellTitle">Cúbica Simple <span>SC</span></div>
+        <div class="controls-bar">
+          <button class="ctrl-btn" onclick="autoRotate=!autoRotate;this.textContent=autoRotate?'⏸ Auto':'▶ Auto'">▶ Auto</button>
+          <button class="ctrl-btn" onclick="resetView()">↺ Reset</button>
+          <button class="ctrl-btn" onclick="toggleBonds()">⊞ Bonds</button>
+        </div>
+      </div>
+      <canvas id="c" width="700" height="520"></canvas>
+      <div class="canvas-footer">
+        <div>Rotar: <span>Arrastrar</span></div>
+        <div>Zoom: <span>Scroll</span></div>
+        <div>Parámetro a: <span id="footerA">3.52 Å</span></div>
+        <div>Elemento: <span id="footerEl">Ni</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: Info + sliders -->
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="panel">
+        <div class="panel-title">Propiedades</div>
+        <div class="info-section">
+          <div class="info-row"><span class="info-label">Parámetro a</span><span class="info-value" id="infoA">3.52 Å</span></div>
+          <div class="info-row"><span class="info-label">Átomos / Celda</span><span class="info-value" id="infoAtoms">1</span></div>
+          <div class="info-row"><span class="info-label">Empaquetamiento</span><span class="info-value" id="infoPack">52.4%</span></div>
+          <div class="info-row"><span class="info-label">Coord. Número</span><span class="info-value" id="infoCN">6</span></div>
+          <div class="info-row"><span class="info-label">Radio atómico</span><span class="info-value" id="infoR">1.25 Å</span></div>
+          <div class="info-row"><span class="info-label">Densidad</span><span class="info-value" id="infoDens">8.91 g/cm³</span></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Controles</div>
+        <div class="slider-section">
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Tamaño átomo</span>
+              <span id="lblSize">50%</span>
+            </div>
+            <input type="range" min="10" max="100" value="50" oninput="atomScale=this.value/100;lblSize.textContent=this.value+'%'">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Velocidad rot.</span>
+              <span id="lblSpeed">50%</span>
+            </div>
+            <input type="range" min="0" max="100" value="50" oninput="rotSpeed=this.value/500;lblSpeed.textContent=this.value+'%'">
+          </div>
+          <div class="slider-row">
+            <div class="slider-label">
+              <span>Zoom</span>
+              <span id="lblZoom">100%</span>
+            </div>
+            <input id="zoomSlider" type="range" min="50" max="200" value="100" oninput="zoomFactor=this.value/100;lblZoom.textContent=this.value+'%'">
+          </div>
+        </div>
+      </div>
+
+      <!-- DENSITY PANEL -->
+      <div class="panel">
+        <div class="panel-title">Densidad Teórica — Paso a Paso</div>
+        <div class="density-section">
+          <div class="density-formula">
+            <div class="formula-text">ρ = (n · M) / (Vc · Nₐ)</div>
+            <div class="formula-sub">Nₐ = 6.0248 × 10²³ átomos/mol</div>
+          </div>
+          <div class="density-step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-label">Átomos por celda (n)</div>
+              <div class="step-value" id="dStep1">—</div>
+            </div>
+          </div>
+          <div class="density-step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-label">Peso atómico (M)</div>
+              <div class="step-value" id="dStep2">—</div>
+            </div>
+          </div>
+          <div class="density-step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <div class="step-label">Parámetro a → cm</div>
+              <div class="step-value" id="dStep3">—</div>
+            </div>
+          </div>
+          <div class="density-step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <div class="step-label">Volumen celda (Vc = a³)</div>
+              <div class="step-value" id="dStep4">—</div>
+            </div>
+          </div>
+          <div class="density-step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <div class="step-label">Masa celda (n·M / Nₐ)</div>
+              <div class="step-value" id="dStep5">—</div>
+              <div class="step-eq" id="dStep5eq">—</div>
+            </div>
+          </div>
+          <div class="density-result">
+            <div>
+              <div class="res-label">ρ teórica</div>
+              <div style="font-size:10px;color:var(--text-dim);font-family:'Space Mono',monospace;margin-top:2px">masa / volumen</div>
+            </div>
+            <div class="res-value" id="dResult">—</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- XRD PANEL -->
+      <div class="panel">
+        <div class="panel-title">Difracción de Rayos X — Reglas de Selección</div>
+        <div class="xrd-section">
+          <div class="xrd-rule-badge" id="xrdRuleName">SC — Todos los planos</div>
+          <div class="xrd-rule-desc" id="xrdRuleDesc">Todos los planos producen reflexión (sin restricción).</div>
+          <div class="xrd-planes-label">Planos (hkl) evaluados</div>
+          <div class="xrd-planes" id="xrdPlanes"></div>
+          <div class="xrd-summary">
+            <span class="s-label">Permitidos:</span>
+            <span class="s-val-green" id="xrdAllowed">—</span>
+            <span class="s-label">Extintos:</span>
+            <span class="s-val-red" id="xrdForbidden">—</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Leyenda</div>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#00d4ff;box-shadow:0 0 8px #00d4ff"></div>
+            <span>Átomo vértice <span class="badge">1/8</span></span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#ff6b35;box-shadow:0 0 8px #ff6b35"></div>
+            <span>Átomo cuerpo <span class="badge">1/1</span></span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#7fff6e;box-shadow:0 0 8px #7fff6e"></div>
+            <span>Átomo cara <span class="badge">1/2</span></span>
+          </div>
+          <div class="legend-item" style="margin-top:8px">
+            <div style="width:12px;height:2px;background:rgba(0,212,255,0.4)"></div>
+            <span style="font-size:11px;color:var(--text-dim)">Aristas de celda</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ======================== DATA ========================
+const elements = [
+  { symbol:'Fe', name:'Hierro',    Z:26, r:1.26, M:55.85,  cell:'bcc', color:[255,140,60],   a:2.87, rho:7.87 },
+  { symbol:'Cu', name:'Cobre',     Z:29, r:1.28, M:63.55,  cell:'fcc', color:[255,180,80],   a:3.61, rho:8.96 },
+  { symbol:'Al', name:'Aluminio',  Z:13, r:1.43, M:26.98,  cell:'fcc', color:[180,210,240],  a:4.05, rho:2.70 },
+  { symbol:'Ni', name:'Níquel',    Z:28, r:1.25, M:58.69,  cell:'fcc', color:[160,200,255],  a:3.52, rho:8.91 },
+  { symbol:'W',  name:'Wolfram',   Z:74, r:1.41, M:183.84, cell:'bcc', color:[180,220,255],  a:3.16, rho:19.3 },
+  { symbol:'Po', name:'Polonio',   Z:84, r:1.68, M:209,    cell:'sc',  color:[160,255,180],  a:3.35, rho:9.32 },
+  { symbol:'Cr', name:'Cromo',     Z:24, r:1.28, M:52.00,  cell:'bcc', color:[200,160,255],  a:2.88, rho:7.19 },
+  { symbol:'Ag', name:'Plata',     Z:47, r:1.44, M:107.87, cell:'fcc', color:[230,230,240],  a:4.09, rho:10.5 },
+  { symbol:'Au', name:'Oro',       Z:79, r:1.44, M:196.97, cell:'fcc', color:[255,215,0],    a:4.08, rho:19.3 },
+  { symbol:'Pb', name:'Plomo',     Z:82, r:1.75, M:207.2,  cell:'fcc', color:[150,150,170],  a:4.95, rho:11.3 },
+  { symbol:'Na', name:'Sodio',     Z:11, r:1.86, M:22.99,  cell:'bcc', color:[255,220,120],  a:4.29, rho:0.97 },
+  { symbol:'Li', name:'Litio',     Z:3,  r:1.52, M:6.94,   cell:'bcc', color:[200,240,200],  a:3.51, rho:0.53 },
+];
+
+const cellData = {
+  sc:  { name:'Cúbica Simple',            abbr:'SC',  atoms:1, pack:52.4, cn:6,  rFormula: a => a/2 },
+  bcc: { name:'Cúbica Centrada en Cuerpo',abbr:'BCC', atoms:2, pack:68.0, cn:8,  rFormula: a => a*Math.sqrt(3)/4 },
+  fcc: { name:'Cúbica Centrada en Caras', abbr:'FCC', atoms:4, pack:74.1, cn:12, rFormula: a => a*Math.sqrt(2)/4 },
+};
+
+// ======================== STATE ========================
+let currentCell = 'sc';
+let currentElem = elements[3]; // Ni
+let atomScale   = 0.5;
+let rotSpeed    = 0.1;
+let zoomFactor  = 1.0;
+let autoRotate  = false;
+let showBonds   = true;
+
+let rotX = 0.4, rotY = 0.6;
+let drag = false, lastX, lastY;
+let animId;
+
+// ======================== CANVAS ========================
+const canvas = document.getElementById('c');
+const ctx    = canvas.getContext('2d');
+
+function resizeCanvas(){
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width  = rect.width;
+  canvas.height = 520;
+}
+
+// ======================== ELEMENTS UI ========================
+function buildElementGrid(){
+  const grid = document.getElementById('elemGrid');
+  grid.innerHTML = '';
+  elements.forEach((el,i) => {
+    const btn = document.createElement('div');
+    btn.className = 'elem-btn' + (el.symbol===currentElem.symbol?' active':'');
+    btn.innerHTML = `
+      <div class="z">${el.Z}</div>
+      <div class="symbol">${el.symbol}</div>
+      <div class="elem-name">${el.name}</div>
+    `;
+    btn.onclick = () => {
+      document.querySelectorAll('.elem-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      currentElem = el;
+      updateInfo();
+    };
+    grid.appendChild(btn);
+  });
+}
+
+// ======================== INFO UPDATE ========================
+function updateInfo(){
+  const cd = cellData[currentCell];
+  const a  = currentElem.a;
+  const r  = cd.rFormula(a);
+  document.getElementById('infoA').textContent    = a.toFixed(2)+' Å';
+  document.getElementById('infoAtoms').textContent= cd.atoms;
+  document.getElementById('infoPack').textContent = cd.pack+'%';
+  document.getElementById('infoCN').textContent   = cd.cn;
+  document.getElementById('infoR').textContent    = r.toFixed(3)+' Å';
+  document.getElementById('infoDens').textContent = currentElem.rho+' g/cm³';
+  document.getElementById('footerA').textContent  = a.toFixed(2)+' Å';
+  document.getElementById('footerEl').textContent = currentElem.symbol;
+  document.getElementById('cellTitle').innerHTML  = cd.name+' <span>'+cd.abbr+'</span>';
+  actualizarDensidad();
+  actualizarPlanos();
+}
+
+// ======================== DENSITY CALC ========================
+function actualizarDensidad(){
+  const NA = 6.0248e23;
+  const cd = cellData[currentCell];
+  const n  = cd.atoms;
+  const M  = currentElem.M;
+  const a_ang = currentElem.a;                   // Å
+  const a_cm  = a_ang * 1e-8;                    // cm
+  const Vc    = Math.pow(a_cm, 3);               // cm³
+  const masa  = (n * M) / NA;                    // g
+  const rho   = masa / Vc;                       // g/cm³
+
+  document.getElementById('dStep1').textContent = `n = ${n} átomo${n>1?'s':''}/celda`;
+  document.getElementById('dStep2').textContent = `M = ${M} g/mol`;
+  document.getElementById('dStep3').textContent = `a = ${a_ang} Å = ${a_cm.toExponential(4)} cm`;
+  document.getElementById('dStep4').textContent = `Vc = (${a_cm.toExponential(3)})³ = ${Vc.toExponential(4)} cm³`;
+  document.getElementById('dStep5').textContent = `m = (${n} × ${M}) / (6.0248×10²³)`;
+  document.getElementById('dStep5eq').textContent = `= ${masa.toExponential(4)} g`;
+  document.getElementById('dResult').textContent = `${rho.toFixed(3)} g/cm³`;
+}
+
+// ======================== XRD SELECTION RULES ========================
+function actualizarPlanos(){
+  const planes = [
+    [1,0,0],[1,1,0],[1,1,1],[2,0,0],[2,1,0],
+    [2,1,1],[2,2,0],[2,2,1],[2,2,2]
+  ];
+
+  const rules = {
+    sc:  {
+      name: 'SC — Sin restricción',
+      desc: 'Todos los planos producen reflexión. No hay extincciones sistemáticas.',
+      test: (h,k,l) => true
+    },
+    bcc: {
+      name: 'BCC — h+k+l par',
+      desc: 'Reflexión permitida si (h + k + l) es un número PAR. Extinción cuando la suma es impar.',
+      test: (h,k,l) => (h+k+l) % 2 === 0
+    },
+    fcc: {
+      name: 'FCC — hkl todos pares o todos impares',
+      desc: 'Reflexión permitida si h, k, l son TODOS pares o TODOS impares (0 = par). Extinción si son mixtos.',
+      test: (h,k,l) => {
+        const paridad = [h,k,l].map(x => x%2===0 ? 'e':'o');
+        return paridad.every(p=>p==='e') || paridad.every(p=>p==='o');
+      }
+    }
+  };
+
+  const rule = rules[currentCell];
+  document.getElementById('xrdRuleName').textContent = rule.name;
+  document.getElementById('xrdRuleDesc').textContent = rule.desc;
+
+  const container = document.getElementById('xrdPlanes');
+  container.innerHTML = '';
+  let allowed = 0, forbidden = 0;
+
+  planes.forEach(([h,k,l]) => {
+    const ok = rule.test(h,k,l);
+    if(ok) allowed++; else forbidden++;
+    const badge = document.createElement('div');
+    badge.className = `plane-badge ${ok ? 'allowed' : 'forbidden'}`;
+    badge.textContent = `${h}${k}${l}`;
+    badge.title = ok ? `(${h}${k}${l}) — Permitido` : `(${h}${k}${l}) — Extinto`;
+    container.appendChild(badge);
+  });
+
+  document.getElementById('xrdAllowed').textContent   = `${allowed} planos`;
+  document.getElementById('xrdForbidden').textContent = `${forbidden} planos`;
+}
+
+function selectCell(type, btn){
+  currentCell = type;
+  document.querySelectorAll('.cell-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  updateInfo();
+}
+
+function toggleBonds(){ showBonds=!showBonds; }
+function resetView(){ rotX=0.4; rotY=0.6; }
+
+// ======================== 3D ENGINE ========================
+function project(x,y,z,cx,cy,scale){
+  const cosX=Math.cos(rotX), sinX=Math.sin(rotX);
+  const cosY=Math.cos(rotY), sinY=Math.sin(rotY);
+  let y1= y*cosX - z*sinX;
+  let z1= y*sinX + z*cosX;
+  let x2= x*cosY + z1*sinY;
+  let z2=-x*sinY + z1*cosY;
+  const fov=4;
+  const d=fov/(fov+z2*0.5);
+  return { px:cx+x2*scale*d, py:cy+y1*scale*d, z:z2, d };
+}
+
+function drawSphere(px,py,r,color,alpha=1,glow=false){
+  const [rc,gc,bc]=color;
+  if(glow){
+    const g2=ctx.createRadialGradient(px,py,0,px,py,r*2.5);
+    g2.addColorStop(0,`rgba(${rc},${gc},${bc},0.15)`);
+    g2.addColorStop(1,`rgba(${rc},${gc},${bc},0)`);
+    ctx.beginPath();
+    ctx.arc(px,py,r*2.5,0,Math.PI*2);
+    ctx.fillStyle=g2;
+    ctx.fill();
+  }
+  const g=ctx.createRadialGradient(px-r*0.3,py-r*0.3,r*0.05,px,py,r);
+  g.addColorStop(0,`rgba(255,255,255,${alpha*0.9})`);
+  g.addColorStop(0.3,`rgba(${rc},${gc},${bc},${alpha})`);
+  g.addColorStop(1,`rgba(${Math.max(0,rc-60)},${Math.max(0,gc-60)},${Math.max(0,bc-60)},${alpha})`);
+  ctx.beginPath();
+  ctx.arc(px,py,r,0,Math.PI*2);
+  ctx.fillStyle=g;
+  ctx.fill();
+  ctx.strokeStyle=`rgba(255,255,255,${alpha*0.2})`;
+  ctx.lineWidth=0.5;
+  ctx.stroke();
+}
+
+function getAtoms(){
+  const c=[-0.5,0.5];
+  let atoms=[];
+
+  const cornerColor = currentElem.color;
+  // Corners
+  for(const x of c)for(const y of c)for(const z of c)
+    atoms.push({x,y,z,type:'corner',color:cornerColor});
+
+  if(currentCell==='bcc')
+    atoms.push({x:0,y:0,z:0,type:'body',color:[255,107,53]});
+
+  if(currentCell==='fcc'){
+    const faces=[[0,0.5,0],[0,-0.5,0],[0.5,0,0],[-0.5,0,0],[0,0,0.5],[0,0,-0.5]];
+    faces.forEach(([x,y,z])=>atoms.push({x,y,z,type:'face',color:[127,255,110]}));
+  }
+
+  return atoms;
+}
+
+function getEdges(){
+  const c=[-0.5,0.5];
+  const corners=[];
+  for(const x of c)for(const y of c)for(const z of c) corners.push([x,y,z]);
+  const edges=[];
+  for(let i=0;i<corners.length;i++){
+    for(let j=i+1;j<corners.length;j++){
+      const [x1,y1,z1]=corners[i];
+      const [x2,y2,z2]=corners[j];
+      const d=Math.abs(x1-x2)+Math.abs(y1-y2)+Math.abs(z1-z2);
+      if(Math.abs(d-1)<0.01) edges.push([corners[i],corners[j]]);
+    }
+  }
+  return edges;
+}
+
+function getAtomRadius(type){
+  const cd=cellData[currentCell];
+  const a=currentElem.a;
+  const r=cd.rFormula(a);
+  const baseScale = (r/a) * 2 * 1.4;
+  const s = baseScale * atomScale;
+  // Scale differently by type
+  if(type==='corner') return 80*s;
+  if(type==='body')   return 80*s;
+  if(type==='face')   return 80*s;
+  return 80*s;
+}
+
+function draw(){
+  const W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+
+  // Background
+  const bg=ctx.createRadialGradient(W/2,H/2,0,W/2,H/2,Math.max(W,H)*0.7);
+  bg.addColorStop(0,'#0a1628');
+  bg.addColorStop(1,'#050810');
+  ctx.fillStyle=bg; ctx.fillRect(0,0,W,H);
+
+  const cx=W/2, cy=H/2;
+  const scale=Math.min(W,H)*0.28*zoomFactor;
+
+  // Edges
+  if(showBonds){
+    const edges=getEdges();
+    edges.forEach(([a,b])=>{
+      const p1=project(a[0],a[1],a[2],cx,cy,scale);
+      const p2=project(b[0],b[1],b[2],cx,cy,scale);
+      ctx.beginPath();
+      ctx.moveTo(p1.px,p1.py);
+      ctx.lineTo(p2.px,p2.py);
+      const avgZ=(p1.z+p2.z)/2;
+      const alpha=0.25+0.2*((avgZ+1)/2);
+      ctx.strokeStyle=`rgba(0,180,220,${alpha})`;
+      ctx.lineWidth=1.2;
+      ctx.stroke();
+    });
+  }
+
+  // Atoms - sorted by z
+  const atoms=getAtoms();
+  const projected=atoms.map(at=>{
+    const p=project(at.x,at.y,at.z,cx,cy,scale);
+    return {...at,...p};
+  }).sort((a,b)=>a.z-b.z);
+
+  projected.forEach(at=>{
+    const r=getAtomRadius(at.type);
+    const alpha=0.7+0.3*((at.z+1)/2);
+    const glow=(at.type==='body'||at.type==='face');
+    drawSphere(at.px,at.py,r,at.color,alpha,glow);
+  });
+
+  // Axis labels
+  ctx.font='bold 12px Space Mono, monospace';
+  ctx.textAlign='center';
+  const axLen=0.7;
+  [['a',axLen,0,0,'#ff6b35'],['b',0,axLen,0,'#00d4ff'],['c',0,0,axLen,'#7fff6e']].forEach(([label,x,y,z,col])=>{
+    const p=project(x,y,z,cx,cy,scale);
+    ctx.fillStyle=col;
+    ctx.fillText(label,p.px,p.py);
+  });
+}
+
+// ======================== ANIMATION ========================
+function animate(){
+  if(autoRotate) rotY+=rotSpeed*0.016;
+  draw();
+  animId=requestAnimationFrame(animate);
+}
+
+// ======================== MOUSE ========================
+canvas.addEventListener('mousedown',e=>{drag=true;lastX=e.clientX;lastY=e.clientY;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  rotY+=(e.clientX-lastX)*0.01;
+  rotX+=(e.clientY-lastY)*0.01;
+  lastX=e.clientX; lastY=e.clientY;
+});
+canvas.addEventListener('wheel',e=>{
+  zoomFactor=Math.max(0.4,Math.min(3,zoomFactor-e.deltaY*0.001));
+  document.getElementById('zoomSlider').value=zoomFactor*100;
+  document.getElementById('lblZoom').textContent=Math.round(zoomFactor*100)+'%';
+},{passive:true});
+
+// Touch
+canvas.addEventListener('touchstart',e=>{drag=true;const t=e.touches[0];lastX=t.clientX;lastY=t.clientY;},{passive:true});
+canvas.addEventListener('touchend',()=>drag=false);
+canvas.addEventListener('touchmove',e=>{
+  if(!drag)return;
+  const t=e.touches[0];
+  rotY+=(t.clientX-lastX)*0.01;
+  rotX+=(t.clientY-lastY)*0.01;
+  lastX=t.clientX;lastY=t.clientY;
+},{passive:true});
+
+// ======================== INIT ========================
+window.addEventListener('resize',()=>{resizeCanvas();});
+resizeCanvas();
+buildElementGrid();
+updateInfo();
+animate();
+</script>
+</body>
+</html>
