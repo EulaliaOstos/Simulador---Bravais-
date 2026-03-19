@@ -26,6 +26,10 @@ El simulador permite visualizar estructuras cristalinas utilizadas en el estudio
 ## Materia
 Proyectos de Software Enfocados a Nanotecnología
 
+## Simulador en línea
+Puedes probar el simulador aquí:
+https://eulaliaostos.github.io/Simulador---Bravais-/Bravais-cubicas.html 
+
 ## Autor
 Gloria Eulalia Ostos Soto  
 Licenciatura en Ciencias Computacionales  
