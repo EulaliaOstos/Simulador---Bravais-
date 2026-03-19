@@ -1,5 +1,4 @@
 # Simulador de Celdas de Bravais
-file:///Users/gloria/Desktop/TAREAS%20FACU/8vo%20Semestre%20/NANO/Examen%202/bravais-cubicas.html 
 
 ## Descripción
 Este proyecto es un simulador interactivo de estructuras cristalinas cúbicas de Bravais desarrollado en HTML, CSS y JavaScript.
