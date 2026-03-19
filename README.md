@@ -28,7 +28,7 @@ Proyectos de Software Enfocados a Nanotecnología
 
 ## Simulador en línea
 Puedes probar el simulador aquí:
-https://eulaliaostos.github.io/Simulador---Bravais-/Bravais-cubicas.html 
+https://eulaliaostos.github.io/Simulador---Bravais-/
 
 ## Autor
 Gloria Eulalia Ostos Soto  
